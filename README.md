@@ -16,7 +16,22 @@ Run the web interface:
 PYTHONPATH=. python newsfeed/app.py
 ```
 
-Access `http://localhost:5000/?limit=20` to view the top 20 stories. The limit can be any value between 1 and 100.
+Access `http://localhost:5000/?limit=20` to view the top 20 stories. The list is
+paginated; adjust the `page` query parameter or use the form on the page to
+navigate. The limit can be any value between 1 and 100.
+
+### Twitter trends
+
+High-impact tweets can be included in the feed. Provide a Twitter API bearer
+token via the `TWITTER_BEARER_TOKEN` environment variable:
+
+```bash
+export TWITTER_BEARER_TOKEN=YOUR_TOKEN
+```
+
+The `TwitterTrendsFetcher` class in `newsfeed/twitter_feed.py` queries a few
+predefined influential accounts and converts their latest tweets into
+`Story` objects.
 
 ## Deployment on Vercel
 

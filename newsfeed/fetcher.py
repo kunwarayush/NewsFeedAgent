@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import List
 
+from urllib.parse import quote_plus
 import feedparser
 import re
 from html import unescape
@@ -88,8 +89,26 @@ class Story:
     references: List[Reference]
 
 
-def fetch_top_stories(limit: int = 10) -> List[Story]:
-    """Fetch top stories from Google News RSS feed.
+def _related_links(title: str) -> List[Reference]:
+    """Fetch up to four related links for the given story title."""
+
+    search_url = (
+        "https://news.google.com/rss/search?q="
+        f"{quote_plus(title)}&hl=en-IN&gl=IN&ceid=IN:en"
+    )
+    data = feedparser.parse(search_url)
+    refs: List[Reference] = []
+    for e in data.entries[:4]:
+        r_title, _ = _split_title_source(e.get("title", ""))
+        r_link = _resolve_link(e.get("link", ""))
+        refs.append(Reference(r_title, r_link))
+    while len(refs) < 4:
+        refs.append(Reference(title, ""))
+    return refs
+
+
+def fetch_top_stories(limit: int = 10, include_twitter: bool = True) -> List[Story]:
+    """Fetch top stories from Google News RSS feed and Twitter trends.
 
     Args:
         limit: Number of stories to return (1-100).
@@ -101,12 +120,17 @@ def fetch_top_stories(limit: int = 10) -> List[Story]:
     feed_url = "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en"
     data = feedparser.parse(feed_url)
     limit = max(1, min(limit, 100))
-    entries = data.entries[:limit]
+    google_limit = limit if not include_twitter else max(1, limit // 2)
+    entries = data.entries[:google_limit]
     stories: List[Story] = []
+    seen_titles = set()
 
-    for idx, entry in enumerate(entries):
+    for entry in entries:
         raw_title = entry.get("title", "")
         title, source = _split_title_source(raw_title)
+        if title in seen_titles:
+            continue
+        seen_titles.add(title)
         link = _resolve_link(entry.get("link", ""))
         summary = _clean_summary(entry.get("summary", ""))
         published = entry.get("published_parsed")
@@ -128,14 +152,7 @@ def fetch_top_stories(limit: int = 10) -> List[Story]:
             Perspective("right", f"Right perspective on {title}"),
         ]
 
-        ref_entries = data.entries[idx + 1 : idx + 5]
-        references = []
-        for e in ref_entries:
-            r_title, _ = _split_title_source(e.get("title", ""))
-            r_link = _resolve_link(e.get("link", ""))
-            references.append(Reference(r_title, r_link))
-        while len(references) < 4:
-            references.append(Reference(title, link))
+        references = _related_links(title)
 
         stories.append(
             Story(
@@ -151,5 +168,14 @@ def fetch_top_stories(limit: int = 10) -> List[Story]:
                 references=references,
             )
         )
+
+    if include_twitter:
+        try:
+            from .twitter_feed import TwitterTrendsFetcher
+
+            t_fetcher = TwitterTrendsFetcher()
+            stories.extend(t_fetcher.fetch(limit - len(stories)))
+        except Exception:
+            pass
 
     return stories

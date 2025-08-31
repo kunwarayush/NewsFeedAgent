@@ -18,6 +18,13 @@
 <body>
 <div class="container">
     <h1>Top Stories</h1>
+    <form method="get" style="margin-bottom:20px;">
+        <label>Stories per page:
+            <input type="number" name="limit" min="1" max="100" value="{{ limit }}" />
+        </label>
+        <input type="hidden" name="page" value="1" />
+        <button type="submit">Update</button>
+    </form>
     {% for story in stories %}
     <div class="story">
         <h2><a href="{{ story.link }}" target="_blank">{{ story.title }}</a></h2>
@@ -48,6 +55,14 @@
         </div>
     </div>
     {% endfor %}
+    <div class="pagination" style="text-align:center;">
+        {% if prev_page %}
+        <a href="?limit={{ limit }}&page={{ prev_page }}">Previous</a>
+        {% endif %}
+        {% if next_page %}
+        <a href="?limit={{ limit }}&page={{ next_page }}" style="margin-left:20px;">Next</a>
+        {% endif %}
+    </div>
 </div>
 </body>
 </html>
