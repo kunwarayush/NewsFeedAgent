@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>News Feed</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; max-width: 900px; }
+        h1 { text-align: center; }
+        .story { border-bottom: 1px solid #ccc; padding: 15px 0; }
+        .scores span { margin-right: 10px; font-size: 0.9em; }
+        .category { color: #555; font-size: 0.9em; }
+        details { margin-top: 5px; }
+        ol { padding-left: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Top Stories</h1>
+    {% for story in stories %}
+    <div class="story">
+        <h2><a href="{{ story.link }}" target="_blank">{{ story.title }}</a></h2>
+        <p class="category">Category: {{ story.category }}</p>
+        <p>{{ story.summary }}</p>
+        <div class="scores">
+            <span>Relevance: {{ '%.2f'|format(story.relevance_score) }}</span>
+            <span>Bias: {{ '%.2f'|format(story.bias_score) }}</span>
+            <span>Trending: {{ '%.2f'|format(story.trending_score) }}</span>
+        </div>
+        <details>
+            <summary>Perspectives</summary>
+            <ul>
+                {% for p in story.perspectives %}
+                <li><strong>{{ p.viewpoint }}:</strong> {{ p.detail }}</li>
+                {% endfor %}
+            </ul>
+        </details>
+        <p>References:</p>
+        <ol>
+            {% for ref in story.references %}
+            <li><a href="{{ ref.link }}" target="_blank">{{ ref.title }}</a></li>
+            {% endfor %}
+        </ol>
+    </div>
+    {% endfor %}
+</body>
+</html>
