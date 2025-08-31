@@ -6,16 +6,12 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Tuple, List
 
-import nltk
+import re
 import requests
 from bs4 import BeautifulSoup
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.summarizers.lsa import LsaSummarizer
 
 from .models import Article, Score, Perspective
 
-nltk.download("punkt", quiet=True)
 
 
 class Categorizer:
@@ -79,7 +75,6 @@ class Analyzer:
         self.bias = BiasScorer()
         self.trend = TrendPredictor()
         self.persp = PerspectiveGenerator()
-        self.summarizer = LsaSummarizer()
 
     def analyze(self, article: Article) -> Tuple[str, Score, Score, Score]:
         category = self.categorizer.categorize(article.title, article.summary)
@@ -92,12 +87,17 @@ class Analyzer:
         return self.persp.generate(article)
 
     def summarize(self, article: Article) -> str:
+        """Fetch article text and return the first few sentences.
+
+        This avoids heavyweight NLP dependencies that require external
+        downloads, making the code friendly for read-only environments like
+        Vercel serverless functions.
+        """
         try:
             resp = requests.get(article.link, timeout=5)
             soup = BeautifulSoup(resp.text, "html.parser")
             text = " ".join(p.get_text() for p in soup.find_all("p"))
-            parser = PlaintextParser.from_string(text, Tokenizer("english"))
-            summary = self.summarizer(parser.document, sentences_count=3)
-            return " ".join(str(s) for s in summary) or article.summary
+            sentences = re.split(r"(?<=[.!?])\s+", text)
+            return " ".join(sentences[:3]) or article.summary
         except Exception:
             return article.summary
