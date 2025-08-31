@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Fetch trending tweets from high-impact accounts."""
 
+from datetime import datetime, timezone
 from typing import List
 import os
 
@@ -10,7 +11,8 @@ try:
 except Exception:  # pragma: no cover - tweepy optional
     tweepy = None
 
-from .fetcher import Story, Perspective, Reference, _categorize
+from .models import Story, Perspective, Reference, Score
+from .analytics import categorize
 
 
 class TwitterTrendsFetcher:
@@ -61,7 +63,7 @@ class TwitterTrendsFetcher:
         for username, tweet in tweets[:limit]:
             title = tweet.text
             link = f"https://twitter.com/{username}/status/{tweet.id}"
-            category = _categorize(title, "")
+            category = categorize(title, "")
             perspectives = [Perspective("tweet", title)]
             references = [Reference(title, link) for _ in range(4)]
             stories.append(
@@ -71,9 +73,10 @@ class TwitterTrendsFetcher:
                     link=link,
                     source=username,
                     category=category,
-                    relevance_score=0.5,
-                    bias_score=0.5,
-                    trending_score=1.0,
+                    published=datetime.now(timezone.utc),
+                    relevance=Score(0.5, "Derived from Twitter feed"),
+                    bias=Score(0.5, "Bias scoring not available"),
+                    trending=Score(1.0, "Trending on Twitter"),
                     perspectives=perspectives,
                     references=references,
                 )

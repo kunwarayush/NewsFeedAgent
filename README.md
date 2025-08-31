@@ -18,7 +18,9 @@ PYTHONPATH=. python newsfeed/app.py
 
 Access `http://localhost:5000/?limit=20` to view the top 20 stories. The list is
 paginated; adjust the `page` query parameter or use the form on the page to
-navigate. The limit can be any value between 1 and 100.
+navigate. The limit can be any value between 1 and 100. Stories can also be
+sorted via the `sort` query parameter with options `latest`, `trending`, `top`,
+or `oldest`.
 
 ### Twitter trends
 

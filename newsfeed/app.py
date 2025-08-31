@@ -13,7 +13,8 @@ app = Flask(__name__)
 def index():
     limit = request.args.get("limit", default=10, type=int)
     page = request.args.get("page", default=1, type=int)
-    all_stories = fetch_top_stories(limit * page)
+    sort = request.args.get("sort", default="latest", type=str)
+    all_stories = fetch_top_stories(limit * page, sort=sort)
     start = (page - 1) * limit
     stories = all_stories[start : start + limit]
     next_page = page + 1 if len(all_stories) > page * limit else None
@@ -23,6 +24,7 @@ def index():
         stories=stories,
         limit=limit,
         page=page,
+        sort=sort,
         next_page=next_page,
         prev_page=prev_page,
     )

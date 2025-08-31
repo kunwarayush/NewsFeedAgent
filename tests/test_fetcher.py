@@ -17,7 +17,7 @@ def test_limit_and_references(monkeypatch):
     def fake_parse(url):
         return DummyFeed(entries)
 
-    monkeypatch.setattr("newsfeed.fetcher.feedparser.parse", fake_parse)
+    monkeypatch.setattr("newsfeed.crawler.feedparser.parse", fake_parse)
 
     stories = fetch_top_stories(limit=5, include_twitter=False)
     assert len(stories) == 5
