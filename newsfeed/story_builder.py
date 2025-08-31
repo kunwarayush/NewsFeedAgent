@@ -20,13 +20,20 @@ class StoryBuilder:
         limit = max(1, min(limit, 100))
         articles = self.crawler.fetch(limit)
         stories: List[Story] = []
+        seen_titles = set()
         for art in articles:
+            key = art.title.strip().lower()
+            if key in seen_titles:
+                continue
+            seen_titles.add(key)
             category, relevance, bias, trending = self.analyzer.analyze(art)
+            summary = self.analyzer.summarize(art)
+            perspectives = self.analyzer.generate_perspectives(art)
             references = related_links(art.title)
             stories.append(
                 Story(
                     title=art.title,
-                    summary=art.summary,
+                    summary=summary,
                     link=art.link,
                     source=art.source,
                     category=category,
@@ -35,6 +42,7 @@ class StoryBuilder:
                     bias=bias,
                     trending=trending,
                     references=references,
+                    perspectives=perspectives,
                 )
             )
 
@@ -46,6 +54,14 @@ class StoryBuilder:
                 stories.extend(t_fetcher.fetch(limit - len(stories)))
             except Exception:
                 pass
+
+        # Deduplicate again after blending Twitter stories
+        unique = {}
+        for s in stories:
+            key = s.title.strip().lower()
+            if key not in unique:
+                unique[key] = s
+        stories = list(unique.values())
 
         stories = self._sort(stories, sort)
         return stories[:limit]

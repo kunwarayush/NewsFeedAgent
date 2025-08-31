@@ -10,7 +10,7 @@ from typing import List
 import requests
 
 from .analytics import categorize
-from .models import Reference, Score, Story
+from .models import Reference, Score, Story, Perspective
 
 
 class TwitterTrendsFetcher:
@@ -73,6 +73,7 @@ class TwitterTrendsFetcher:
                     link = trend.get("url") or f"https://twitter.com/search?q={title}"
                     category = categorize(title, "")
                     references = [Reference(title, link) for _ in range(4)]
+                    perspectives = [Perspective("General", f"Discussion around {title}")]
                     stories.append(
                         Story(
                             title=title,
@@ -85,6 +86,7 @@ class TwitterTrendsFetcher:
                             bias=Score(0.5, "Bias scoring not available"),
                             trending=Score(1.0, f"Trending tab: {tab}"),
                             references=references,
+                            perspectives=perspectives,
                         )
                     )
                     if len(stories) >= limit:

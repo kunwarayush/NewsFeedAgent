@@ -4,9 +4,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Tuple
+from typing import Tuple, List
 
-from .models import Article, Score
+import nltk
+import requests
+from bs4 import BeautifulSoup
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.summarizers.lsa import LsaSummarizer
+
+from .models import Article, Score, Perspective
+
+nltk.download("punkt", quiet=True)
 
 
 class Categorizer:
@@ -49,6 +58,18 @@ class TrendPredictor:
         return Score(val, expl)
 
 
+class PerspectiveGenerator:
+    """Produce placeholder multi-perspective analysis."""
+
+    def generate(self, article: Article) -> List[Perspective]:
+        base = article.summary or article.title
+        return [
+            Perspective("Left", f"Left-leaning view: {base}"),
+            Perspective("Right", f"Right-leaning view: {base}"),
+            Perspective("Center", f"Neutral view: {base}"),
+        ]
+
+
 class Analyzer:
     """Combine categorisation and scoring into a single step."""
 
@@ -57,6 +78,8 @@ class Analyzer:
         self.relevance = RelevanceScorer()
         self.bias = BiasScorer()
         self.trend = TrendPredictor()
+        self.persp = PerspectiveGenerator()
+        self.summarizer = LsaSummarizer()
 
     def analyze(self, article: Article) -> Tuple[str, Score, Score, Score]:
         category = self.categorizer.categorize(article.title, article.summary)
@@ -64,3 +87,17 @@ class Analyzer:
         bias = self.bias.score(article)
         trending = self.trend.score(article)
         return category, relevance, bias, trending
+
+    def generate_perspectives(self, article: Article) -> List[Perspective]:
+        return self.persp.generate(article)
+
+    def summarize(self, article: Article) -> str:
+        try:
+            resp = requests.get(article.link, timeout=5)
+            soup = BeautifulSoup(resp.text, "html.parser")
+            text = " ".join(p.get_text() for p in soup.find_all("p"))
+            parser = PlaintextParser.from_string(text, Tokenizer("english"))
+            summary = self.summarizer(parser.document, sentences_count=3)
+            return " ".join(str(s) for s in summary) or article.summary
+        except Exception:
+            return article.summary

@@ -3,38 +3,52 @@
 <head>
     <meta charset="utf-8" />
     <title>News Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <style>
-        body { font-family: Arial, sans-serif; background:#eef1f5; margin:0; }
-        header { background:#343a40; color:#fff; padding:10px 20px; }
-        header h1 { margin:0; }
-        .controls { margin-top:10px; display:flex; gap:10px; align-items:center; }
-        .controls input, .controls select { padding:4px; }
-        #stories { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:15px; padding:20px; }
-        .card { background:#fff; border-radius:8px; padding:15px; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
-        .card h3 { margin-top:0; }
-        .meta { font-size:0.85em; color:#555; margin-bottom:8px; }
+        body { background:#f5f5f5; }
+        .controls { margin-top:20px; }
         .scores span { margin-right:8px; font-size:0.85em; }
-        .refs { padding-left:16px; font-size:0.85em; }
-        #loadMore { display:block; margin:20px auto; padding:10px 20px; }
     </style>
 </head>
 <body>
-<header>
-    <h1>News Dashboard</h1>
-    <div class="controls">
-        <label>Stories: <input type="number" id="limit" min="20" max="100" value="20"></label>
-        <label>Sort: <select id="sort">
-            <option value="latest">Latest</option>
-            <option value="trending">Trending</option>
-            <option value="top">Top</option>
-            <option value="oldest">Oldest</option>
-        </select></label>
-        <button id="refresh">Refresh</button>
+<nav class="blue darken-2">
+  <div class="nav-wrapper container">
+    <a href="#" class="brand-logo">News Dashboard</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="row controls">
+    <div class="input-field col s3">
+      <input id="limit" type="number" min="20" max="100" value="20">
+      <label for="limit">Stories</label>
     </div>
-</header>
-<div id="stories"></div>
-<button id="loadMore">Load More</button>
+    <div class="input-field col s3">
+      <select id="sort">
+        <option value="latest" selected>Latest</option>
+        <option value="trending">Trending</option>
+        <option value="top">Top</option>
+        <option value="oldest">Oldest</option>
+      </select>
+      <label>Sort</label>
+    </div>
+    <div class="input-field col s3">
+      <a id="refresh" class="btn">Refresh</a>
+    </div>
+  </div>
+  <div id="stories" class="row"></div>
+  <div class="row center">
+    <a id="loadMore" class="btn grey lighten-1 black-text">Load More</a>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('select');
+    M.FormSelect.init(elems);
+    loadStories(true);
+});
+
 let offset = 0;
 async function loadStories(reset=false){
     const limit = parseInt(document.getElementById('limit').value)||20;
@@ -46,25 +60,42 @@ async function loadStories(reset=false){
         offset = 0;
     }
     data.forEach(st => {
+        const col = document.createElement('div');
+        col.className = 'col s12 m6';
         const card = document.createElement('div');
         card.className = 'card';
-        card.innerHTML = `<h3><a href="${st.link}" target="_blank">${st.title}</a></h3>
-            <div class="meta">${st.source ? `Source: ${st.source} — ` : ''}Category: ${st.category}</div>
-            <p>${st.summary || ''}</p>
-            <div class="scores">
-                <span title="${st.relevance_expl}">Rel: ${st.relevance.toFixed(2)}</span>
-                <span title="${st.bias_expl}">Bias: ${st.bias.toFixed(2)}</span>
-                <span title="${st.trending_expl}">Trend: ${st.trending.toFixed(2)}</span>
-            </div>
-            <ul class="refs">${st.references.map(r=>`<li><a href="${r.link}" target="_blank">${r.title}</a></li>`).join('')}</ul>`;
-        document.getElementById('stories').appendChild(card);
+        card.innerHTML = `
+        <div class="card-content">
+          <span class="card-title"><a href="${st.link}" target="_blank">${st.title}</a></span>
+          <p class="grey-text text-darken-1">${st.source ? `Source: ${st.source} — ` : ''}Category: ${st.category}</p>
+          <p>${st.summary || ''}</p>
+          <p class="scores">
+            <span title="${st.relevance_expl}">Rel: ${st.relevance.toFixed(2)}</span>
+            <span title="${st.bias_expl}">Bias: ${st.bias.toFixed(2)}</span>
+            <span title="${st.trending_expl}">Trend: ${st.trending.toFixed(2)}</span>
+          </p>
+        </div>
+        <div class="card-action">
+          <ul class="collapsible">
+            <li>
+              <div class="collapsible-header">Perspectives</div>
+              <div class="collapsible-body"><ul>${st.perspectives.map(p=>`<li><strong>${p.label}:</strong> ${p.text}</li>`).join('')}</ul></div>
+            </li>
+            <li>
+              <div class="collapsible-header">References</div>
+              <div class="collapsible-body"><ul>${st.references.map(r=>`<li><a href="${r.link}" target="_blank">${r.title}</a></li>`).join('')}</ul></div>
+            </li>
+          </ul>
+        </div>`;
+        col.appendChild(card);
+        document.getElementById('stories').appendChild(col);
+        M.Collapsible.init(card.querySelectorAll('.collapsible'));
     });
     offset += data.length;
 }
 
 document.getElementById('refresh').addEventListener('click', ()=>loadStories(true));
 document.getElementById('loadMore').addEventListener('click', ()=>loadStories());
-window.addEventListener('DOMContentLoaded', ()=>loadStories(true));
 </script>
 </body>
 </html>

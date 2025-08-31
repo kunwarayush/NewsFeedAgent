@@ -27,6 +27,9 @@ def _story_to_dict(story: Story) -> dict:
         "references": [
             {"title": ref.title, "link": ref.link} for ref in story.references
         ],
+        "perspectives": [
+            {"label": p.label, "text": p.text} for p in story.perspectives
+        ],
     }
 
 

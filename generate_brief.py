@@ -24,6 +24,9 @@ def main() -> None:
             heading += f" ({story.source})"
         print(f"# {heading}\n")
         print(story.summary)
+        print("\nPerspectives:")
+        for p in story.perspectives:
+            print(f"- {p.label}: {p.text}")
         print("\nReferences:")
         for ref in story.references:
             print(f"- {ref.title} - {ref.link}")

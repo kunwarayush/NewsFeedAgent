@@ -16,6 +16,14 @@ class Reference:
 
 
 @dataclass
+class Perspective:
+    """A viewpoint-specific note for a story."""
+
+    label: str
+    text: str
+
+
+@dataclass
 class Score:
     """Numeric score with an optional explanation."""
 
@@ -48,6 +56,7 @@ class Story:
     bias: Score
     trending: Score
     references: List[Reference]
+    perspectives: List[Perspective]
 
     @property
     def relevance_score(self) -> float:  # backward compatibility

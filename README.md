@@ -20,7 +20,9 @@ Open `http://localhost:5000` and the dashboard will load the latest 20 stories
 asynchronously. Use the controls at the top to choose the number of stories
 (20–100) and sorting method (latest, trending, top, or oldest). The **Refresh**
 button pulls a fresh snapshot, and **Load More** dynamically appends additional
-stories without reloading the page.
+stories without reloading the page. Each story is de‑duplicated, summarised via
+an open‑source NLP model, scored for relevance/bias/trendiness, and includes
+clickable references and perspective notes.
 
 ### Twitter trends
 

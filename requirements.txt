@@ -1,3 +1,6 @@
 feedparser
 Flask
 requests
+beautifulsoup4
+sumy
+nltk

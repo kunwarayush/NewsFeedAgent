@@ -34,3 +34,18 @@ def test_twitter_fetcher_handles_missing_credentials(monkeypatch):
     monkeypatch.delenv("TWITTER_API_SECRET", raising=False)
     tf = TwitterTrendsFetcher()
     assert tf.fetch(5) == []
+
+
+def test_deduplicates_titles(monkeypatch):
+    entries = [
+        DummyEntry(title="Same", link="http://example.com/1", summary="S"),
+        DummyEntry(title="Same", link="http://example.com/2", summary="S"),
+    ]
+
+    def fake_parse(url):
+        return DummyFeed(entries)
+
+    monkeypatch.setattr("newsfeed.crawler.feedparser.parse", fake_parse)
+
+    stories = fetch_top_stories(limit=10, include_twitter=False)
+    assert len(stories) == 1
