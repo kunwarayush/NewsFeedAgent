@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>News Brief</title>
+    <style>
+        body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:20px; }
+        .container { max-width:900px; margin:auto; }
+        h1 { text-align:center; margin-bottom:30px; }
+        .story { background:#fff; border-radius:8px; padding:20px; margin-bottom:20px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+        .story h2 { margin-top:0; }
+        .meta { font-size:0.9em; color:#555; margin-bottom:10px; }
+        .scores span { margin-right:10px; }
+        details { margin-top:10px; }
+        ol { padding-left:20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Top Stories</h1>
+    {% for story in stories %}
+    <div class="story">
+        <h2><a href="{{ story.link }}" target="_blank">{{ story.title }}</a></h2>
+        <div class="meta">
+            {% if story.source %}Source: {{ story.source }} &mdash; {% endif %}Category: {{ story.category }}
+        </div>
+        {% if story.summary %}<p>{{ story.summary }}</p>{% endif %}
+        <div class="scores">
+            <span>Relevance: {{ '%.2f'|format(story.relevance_score) }}</span>
+            <span>Bias: {{ '%.2f'|format(story.bias_score) }}</span>
+            <span>Trending: {{ '%.2f'|format(story.trending_score) }}</span>
+        </div>
+        <details>
+            <summary>Perspectives</summary>
+            <ul>
+                {% for p in story.perspectives %}
+                <li><strong>{{ p.viewpoint }}:</strong> {{ p.detail }}</li>
+                {% endfor %}
+            </ul>
+        </details>
+        <div class="references">
+            <p>References:</p>
+            <ol>
+            {% for ref in story.references %}
+                <li><a href="{{ ref.link }}" target="_blank">{{ ref.title }}</a></li>
+            {% endfor %}
+            </ol>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+</body>
+</html>
