@@ -10,7 +10,7 @@ from .models import Story
 _builder = StoryBuilder()
 
 
-def fetch_top_stories(limit: int = 10, sort: str = "latest", include_twitter: bool = True) -> List[Story]:
+def fetch_top_stories(limit: int = 20, sort: str = "latest", include_twitter: bool = True) -> List[Story]:
     """Fetch analysed stories ready for presentation.
 
     Args:

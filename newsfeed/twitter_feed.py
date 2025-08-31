@@ -1,84 +1,94 @@
 from __future__ import annotations
 
-"""Fetch trending tweets from high-impact accounts."""
+"""Fetch trending topics from Twitter tabs using API credentials."""
 
+import base64
+import os
 from datetime import datetime, timezone
 from typing import List
-import os
 
-try:
-    import tweepy  # type: ignore
-except Exception:  # pragma: no cover - tweepy optional
-    tweepy = None
+import requests
 
-from .models import Story, Perspective, Reference, Score
 from .analytics import categorize
+from .models import Reference, Score, Story
 
 
 class TwitterTrendsFetcher:
-    """Retrieve tweets from influential accounts as news stories."""
+    """Retrieve trending topics from Twitter."""
 
-    HIGH_IMPACT_ACCOUNTS = [
-        "PMOIndia",
-        "narendramodi",
-        "ndtv",
-        "timesofindia",
-    ]
+    TABS = ["trending", "news", "entertainment"]
 
-    def __init__(self, bearer_token: str | None = None) -> None:
-        self.bearer_token = bearer_token or os.getenv("TWITTER_BEARER_TOKEN")
-        self.client = None
-        if tweepy and self.bearer_token:
-            try:
-                self.client = tweepy.Client(bearer_token=self.bearer_token, wait_on_rate_limit=True)
-            except Exception:
-                self.client = None
+    def __init__(self, api_key: str | None = None, api_secret: str | None = None) -> None:
+        self.api_key = api_key or os.getenv("TWITTER_API_KEY")
+        self.api_secret = api_secret or os.getenv("TWITTER_API_SECRET")
+        self.bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
+        if not self.bearer_token and self.api_key and self.api_secret:
+            self.bearer_token = self._obtain_bearer_token()
+
+    def _obtain_bearer_token(self) -> str | None:
+        """Exchange API key/secret for a bearer token."""
+        creds = f"{self.api_key}:{self.api_secret}".encode()
+        b64 = base64.b64encode(creds).decode()
+        try:
+            resp = requests.post(
+                "https://api.twitter.com/oauth2/token",
+                headers={"Authorization": f"Basic {b64}"},
+                data={"grant_type": "client_credentials"},
+                timeout=5,
+            )
+            if resp.status_code == 200:
+                return resp.json().get("access_token")
+        except Exception:
+            pass
+        return None
 
     def fetch(self, limit: int = 5) -> List[Story]:
-        """Fetch recent tweets as ``Story`` objects.
+        """Return trending topics as ``Story`` objects.
 
-        Returns an empty list if credentials are missing or the API call fails.
+        The Twitter API is queried using either an existing bearer token or one
+        created from the provided API key and secret. If authentication fails,
+        an empty list is returned.
         """
 
-        if not self.client:
+        if not self.bearer_token:
             return []
 
-        tweets = []
-        for username in self.HIGH_IMPACT_ACCOUNTS:
+        headers = {"Authorization": f"Bearer {self.bearer_token}"}
+        stories: List[Story] = []
+        for tab in self.TABS:
             try:
-                user = self.client.get_user(username=username)
-                user_id = user.data.id if user and user.data else None
-                if not user_id:
+                # Twitter's official API does not expose separate endpoints for
+                # news or entertainment trends; we reuse the global trends API
+                # for demonstration purposes.
+                resp = requests.get(
+                    "https://api.twitter.com/1.1/trends/place.json?id=1",
+                    headers=headers,
+                    timeout=5,
+                )
+                if resp.status_code != 200:
                     continue
-                resp = self.client.get_users_tweets(user_id, max_results=5)
-                if resp.data:
-                    for t in resp.data:
-                        tweets.append((username, t))
+                data = resp.json()
+                for trend in data[0].get("trends", []):
+                    title = trend.get("name")
+                    link = trend.get("url") or f"https://twitter.com/search?q={title}"
+                    category = categorize(title, "")
+                    references = [Reference(title, link) for _ in range(4)]
+                    stories.append(
+                        Story(
+                            title=title,
+                            summary=title,
+                            link=link,
+                            source="Twitter",
+                            category=category,
+                            published=datetime.now(timezone.utc),
+                            relevance=Score(0.5, "Derived from Twitter trending"),
+                            bias=Score(0.5, "Bias scoring not available"),
+                            trending=Score(1.0, f"Trending tab: {tab}"),
+                            references=references,
+                        )
+                    )
+                    if len(stories) >= limit:
+                        return stories
             except Exception:
                 continue
-            if len(tweets) >= limit:
-                break
-
-        stories: List[Story] = []
-        for username, tweet in tweets[:limit]:
-            title = tweet.text
-            link = f"https://twitter.com/{username}/status/{tweet.id}"
-            category = categorize(title, "")
-            perspectives = [Perspective("tweet", title)]
-            references = [Reference(title, link) for _ in range(4)]
-            stories.append(
-                Story(
-                    title=title,
-                    summary=title,
-                    link=link,
-                    source=username,
-                    category=category,
-                    published=datetime.now(timezone.utc),
-                    relevance=Score(0.5, "Derived from Twitter feed"),
-                    bias=Score(0.5, "Bias scoring not available"),
-                    trending=Score(1.0, "Trending on Twitter"),
-                    perspectives=perspectives,
-                    references=references,
-                )
-            )
-        return stories
+        return stories[:limit]

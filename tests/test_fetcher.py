@@ -28,7 +28,9 @@ def test_limit_and_references(monkeypatch):
         assert 0 <= story.trending_score <= 1
 
 
-def test_twitter_fetcher_handles_missing_token(monkeypatch):
+def test_twitter_fetcher_handles_missing_credentials(monkeypatch):
     monkeypatch.delenv("TWITTER_BEARER_TOKEN", raising=False)
+    monkeypatch.delenv("TWITTER_API_KEY", raising=False)
+    monkeypatch.delenv("TWITTER_API_SECRET", raising=False)
     tf = TwitterTrendsFetcher()
     assert tf.fetch(5) == []

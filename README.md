@@ -16,24 +16,27 @@ Run the web interface:
 PYTHONPATH=. python newsfeed/app.py
 ```
 
-Access `http://localhost:5000/?limit=20` to view the top 20 stories. The list is
-paginated; adjust the `page` query parameter or use the form on the page to
-navigate. The limit can be any value between 1 and 100. Stories can also be
-sorted via the `sort` query parameter with options `latest`, `trending`, `top`,
-or `oldest`.
+Open `http://localhost:5000` and the dashboard will load the latest 20 stories
+asynchronously. Use the controls at the top to choose the number of stories
+(20–100) and sorting method (latest, trending, top, or oldest). The **Refresh**
+button pulls a fresh snapshot, and **Load More** dynamically appends additional
+stories without reloading the page.
 
 ### Twitter trends
 
-High-impact tweets can be included in the feed. Provide a Twitter API bearer
-token via the `TWITTER_BEARER_TOKEN` environment variable:
+Trending topics from Twitter can be blended into the feed. Provide Twitter API
+credentials via environment variables. The agent will exchange the key and
+secret for a bearer token when needed.
 
 ```bash
-export TWITTER_BEARER_TOKEN=YOUR_TOKEN
+export TWITTER_API_KEY=pSE413xxsPnvqoHpBdKBiQwFd
+export TWITTER_API_SECRET=qJKaTw6jGPHdRnxoYfRwGmL8VrTlw5Q4qFPA4jJagyebIgmOTP
+# optional pre-generated token
+# export TWITTER_BEARER_TOKEN=YOUR_TOKEN
 ```
 
-The `TwitterTrendsFetcher` class in `newsfeed/twitter_feed.py` queries a few
-predefined influential accounts and converts their latest tweets into
-`Story` objects.
+`TwitterTrendsFetcher` in `newsfeed/twitter_feed.py` crawls the trending, news,
+and entertainment tabs and converts the top topics into `Story` objects.
 
 ## Deployment on Vercel
 

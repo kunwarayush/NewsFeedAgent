@@ -16,14 +16,6 @@ class Reference:
 
 
 @dataclass
-class Perspective:
-    """Represents a single viewpoint on a story."""
-
-    viewpoint: str
-    detail: str
-
-
-@dataclass
 class Score:
     """Numeric score with an optional explanation."""
 
@@ -55,7 +47,6 @@ class Story:
     relevance: Score
     bias: Score
     trending: Score
-    perspectives: List[Perspective]
     references: List[Reference]
 
     @property

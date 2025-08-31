@@ -1,4 +1,3 @@
 feedparser
 Flask
 requests
-tweepy

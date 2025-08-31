@@ -2,10 +2,9 @@ from __future__ import annotations
 
 """Assemble stories from crawled articles and analytics."""
 
-from datetime import datetime, timezone
 from typing import List
 
-from .models import Story, Perspective, Reference
+from .models import Story, Reference
 from .crawler import GoogleNewsCrawler, related_links
 from .analytics import Analyzer
 
@@ -19,16 +18,10 @@ class StoryBuilder:
 
     def build(self, limit: int = 10, sort: str = "latest", include_twitter: bool = True) -> List[Story]:
         limit = max(1, min(limit, 100))
-        google_limit = limit if not include_twitter else max(1, limit // 2)
-        articles = self.crawler.fetch(google_limit)
+        articles = self.crawler.fetch(limit)
         stories: List[Story] = []
         for art in articles:
             category, relevance, bias, trending = self.analyzer.analyze(art)
-            perspectives = [
-                Perspective("left", f"Left perspective on {art.title}"),
-                Perspective("center", f"Centrist view on {art.title}"),
-                Perspective("right", f"Right perspective on {art.title}"),
-            ]
             references = related_links(art.title)
             stories.append(
                 Story(
@@ -41,12 +34,11 @@ class StoryBuilder:
                     relevance=relevance,
                     bias=bias,
                     trending=trending,
-                    perspectives=perspectives,
                     references=references,
                 )
             )
 
-        if include_twitter:
+        if include_twitter and len(stories) < limit:
             try:
                 from .twitter_feed import TwitterTrendsFetcher
 

@@ -1,33 +1,50 @@
+"""Flask interface presenting analyzed news stories with a dashboard UI."""
+
 from __future__ import annotations
 
-"""Flask interface presenting analyzed news stories."""
-
-from flask import Flask, render_template, request
+from flask import Flask, jsonify, render_template, request
 
 from .fetcher import fetch_top_stories
+from .models import Story
 
 app = Flask(__name__)
 
 
+def _story_to_dict(story: Story) -> dict:
+    return {
+        "title": story.title,
+        "summary": story.summary,
+        "link": story.link,
+        "source": story.source,
+        "category": story.category,
+        "published": story.published.isoformat(),
+        "relevance": story.relevance.value,
+        "relevance_expl": story.relevance.explanation,
+        "bias": story.bias.value,
+        "bias_expl": story.bias.explanation,
+        "trending": story.trending.value,
+        "trending_expl": story.trending.explanation,
+        "references": [
+            {"title": ref.title, "link": ref.link} for ref in story.references
+        ],
+    }
+
+
 @app.route("/")
-def index():
-    limit = request.args.get("limit", default=10, type=int)
-    page = request.args.get("page", default=1, type=int)
+def index() -> str:
+    """Serve the dashboard shell; stories load dynamically via JS."""
+    return render_template("index.html")
+
+
+@app.route("/stories")
+def stories() -> "Response":
+    limit = request.args.get("limit", default=20, type=int)
+    limit = max(1, min(limit, 100))
+    offset = request.args.get("offset", default=0, type=int)
     sort = request.args.get("sort", default="latest", type=str)
-    all_stories = fetch_top_stories(limit * page, sort=sort)
-    start = (page - 1) * limit
-    stories = all_stories[start : start + limit]
-    next_page = page + 1 if len(all_stories) > page * limit else None
-    prev_page = page - 1 if page > 1 else None
-    return render_template(
-        "index.html",
-        stories=stories,
-        limit=limit,
-        page=page,
-        sort=sort,
-        next_page=next_page,
-        prev_page=prev_page,
-    )
+    fetched = fetch_top_stories(limit + offset, sort=sort)
+    subset = fetched[offset:]
+    return jsonify([_story_to_dict(s) for s in subset])
 
 
 if __name__ == "__main__":
