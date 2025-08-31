@@ -9,6 +9,23 @@ from typing import List
 import feedparser
 
 
+def _categorize(title: str, summary: str) -> str:
+    """Roughly classify a story into broad categories.
+
+    This is a heuristic placeholder until more advanced NLP models are added.
+    """
+
+    text = f"{title} {summary}".lower()
+    politics_kw = ["election", "minister", "parliament", "government", "policy"]
+    tech_kw = ["tech", "science", "ai", "technology", "health", "medical"]
+
+    if any(k in text for k in politics_kw):
+        return "Politics"
+    if any(k in text for k in tech_kw):
+        return "Tech/Visual"
+    return "General"
+
+
 @dataclass
 class Reference:
     title: str
@@ -28,6 +45,7 @@ class Story:
     title: str
     summary: str
     link: str
+    category: str
     relevance_score: float
     bias_score: float
     trending_score: float
@@ -66,6 +84,7 @@ def fetch_top_stories(limit: int = 10) -> List[Story]:
 
         relevance_score = 1.0 if "India" in title else 0.5
         bias_score = 0.5  # Placeholder until real bias detection is implemented
+        category = _categorize(title, summary)
 
         perspectives = [
             Perspective("left", f"Left perspective on {title}"),
@@ -86,6 +105,7 @@ def fetch_top_stories(limit: int = 10) -> List[Story]:
                 title=title,
                 summary=summary,
                 link=link,
+                category=category,
                 relevance_score=relevance_score,
                 bias_score=bias_score,
                 trending_score=trending_score,
