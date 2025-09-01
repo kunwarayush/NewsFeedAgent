@@ -97,3 +97,43 @@ class GoogleNewsCrawler(BaseCrawler):
                 )
             )
         return articles
+
+
+class CuriousCrawler(BaseCrawler):
+    """Crawler for niche sources like Smithsonian and Nature."""
+
+    FEEDS = [
+        "https://www.smithsonianmag.com/rss/smartnews/",
+        "https://www.history.com/.rss/full/",
+        "https://www.britannica.com/explore/feeds",
+        "https://www.science.org/rss/news_current.xml",
+        "https://www.nature.com/subjects/news.rss",
+        "https://www.encyclopedia.com/rss",
+    ]
+
+    def fetch(self, limit: int) -> List[Article]:
+        articles: List[Article] = []
+        for url in self.FEEDS:
+            data = feedparser.parse(url)
+            for entry in data.entries[:limit]:
+                raw_title = entry.get("title", "")
+                title, source = _split_title_source(raw_title)
+                link = _resolve_link(entry.get("link", ""))
+                summary = _clean_summary(entry.get("summary", ""))
+                published = entry.get("published_parsed")
+                if published:
+                    published_dt = datetime(*published[:6], tzinfo=timezone.utc)
+                else:
+                    published_dt = datetime.now(timezone.utc)
+                articles.append(
+                    Article(
+                        title=title,
+                        summary=summary,
+                        link=link,
+                        source=source or url,
+                        published=published_dt,
+                    )
+                )
+                if len(articles) >= limit:
+                    return articles
+        return articles

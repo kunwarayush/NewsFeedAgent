@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Core data models used across the newsfeed package."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List
 
@@ -57,6 +57,7 @@ class Story:
     trending: Score
     references: List[Reference]
     perspectives: List[Perspective]
+    stats: List[str] = field(default_factory=list)
 
     @property
     def relevance_score(self) -> float:  # backward compatibility

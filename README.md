@@ -22,7 +22,11 @@ asynchronously. Use the controls at the top to choose the number of stories
 button pulls a fresh snapshot, and **Load More** dynamically appends additional
 stories without reloading the page. Each story is de‑duplicated, summarised via
 an open‑source NLP model, scored for relevance/bias/trendiness, and includes
-clickable references and perspective notes.
+clickable references, perspective notes, and basic numeric data points pulled
+from the article text. In addition to Google News, a secondary crawler pulls
+"curious" items from Smithsonian, Britannica, History.com, Science.org, Nature
+and Encyclopedia.com to surface lesser‑known technology, medical and history
+stories.
 
 ### Twitter trends
 

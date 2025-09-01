@@ -78,6 +78,10 @@ async function loadStories(reset=false){
         <div class="card-action">
           <ul class="collapsible">
             <li>
+              <div class="collapsible-header">Data Points</div>
+              <div class="collapsible-body"><ul>${st.stats.map(s=>`<li>${s}</li>`).join('')}</ul></div>
+            </li>
+            <li>
               <div class="collapsible-header">Perspectives</div>
               <div class="collapsible-body"><ul>${st.perspectives.map(p=>`<li><strong>${p.label}:</strong> ${p.text}</li>`).join('')}</ul></div>
             </li>

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import List
 
 from .models import Story, Reference
-from .crawler import GoogleNewsCrawler, related_links
+from .crawler import GoogleNewsCrawler, CuriousCrawler, related_links
 from .analytics import Analyzer
 
 
@@ -19,6 +19,8 @@ class StoryBuilder:
     def build(self, limit: int = 10, sort: str = "latest", include_twitter: bool = True) -> List[Story]:
         limit = max(1, min(limit, 100))
         articles = self.crawler.fetch(limit)
+        curious = CuriousCrawler().fetch(min(5, limit))
+        articles.extend(curious)
         stories: List[Story] = []
         seen_titles = set()
         for art in articles:
@@ -29,6 +31,7 @@ class StoryBuilder:
             category, relevance, bias, trending = self.analyzer.analyze(art)
             summary = self.analyzer.summarize(art)
             perspectives = self.analyzer.generate_perspectives(art)
+            stats = self.analyzer.extract_stats(art)
             references = related_links(art.title)
             stories.append(
                 Story(
@@ -43,6 +46,7 @@ class StoryBuilder:
                     trending=trending,
                     references=references,
                     perspectives=perspectives,
+                    stats=stats,
                 )
             )
 

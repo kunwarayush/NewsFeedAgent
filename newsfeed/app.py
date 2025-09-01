@@ -30,6 +30,7 @@ def _story_to_dict(story: Story) -> dict:
         "perspectives": [
             {"label": p.label, "text": p.text} for p in story.perspectives
         ],
+        "stats": story.stats,
     }
 
 

@@ -26,6 +26,7 @@ def test_limit_and_references(monkeypatch):
         assert 0 <= story.relevance_score <= 1
         assert 0 <= story.bias_score <= 1
         assert 0 <= story.trending_score <= 1
+        assert isinstance(story.stats, list)
 
 
 def test_twitter_fetcher_handles_missing_credentials(monkeypatch):

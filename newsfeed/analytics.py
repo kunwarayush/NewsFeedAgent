@@ -18,14 +18,22 @@ class Categorizer:
     """Rough categorisation based on keywords."""
 
     POLITICS = ["election", "minister", "parliament", "government", "policy"]
-    TECH = ["tech", "science", "ai", "technology", "health", "medical"]
+    TECH = ["tech", "technology", "ai", "innovation"]
+    MEDICAL = ["medical", "health", "vaccine", "disease", "covid", "therapy"]
+    HISTORY = ["history", "ancient", "archaeology", "heritage"]
 
     def categorize(self, title: str, summary: str) -> str:
         text = f"{title} {summary}".lower()
         if any(k in text for k in self.POLITICS):
             return "Politics"
+        if any(k in text for k in self.MEDICAL):
+            return "Medical"
         if any(k in text for k in self.TECH):
-            return "Tech/Visual"
+            return "Technology"
+        if "india" in text and any(k in text for k in self.HISTORY):
+            return "Indian History"
+        if any(k in text for k in self.HISTORY):
+            return "History"
         return "General"
 
 
@@ -66,6 +74,22 @@ class PerspectiveGenerator:
         ]
 
 
+class StatsExtractor:
+    """Pull simple numeric stats from article content."""
+
+    NUM_RE = re.compile(r"\b[0-9][0-9,\.]*%?\b")
+
+    def extract(self, article: Article) -> List[str]:
+        try:
+            resp = requests.get(article.link, timeout=5)
+            soup = BeautifulSoup(resp.text, "html.parser")
+            text = " ".join(p.get_text() for p in soup.find_all("p"))
+        except Exception:
+            text = article.summary
+        nums = self.NUM_RE.findall(text)
+        return nums[:5]
+
+
 class Analyzer:
     """Combine categorisation and scoring into a single step."""
 
@@ -75,6 +99,7 @@ class Analyzer:
         self.bias = BiasScorer()
         self.trend = TrendPredictor()
         self.persp = PerspectiveGenerator()
+        self.stats = StatsExtractor()
 
     def analyze(self, article: Article) -> Tuple[str, Score, Score, Score]:
         category = self.categorizer.categorize(article.title, article.summary)
@@ -85,6 +110,9 @@ class Analyzer:
 
     def generate_perspectives(self, article: Article) -> List[Perspective]:
         return self.persp.generate(article)
+
+    def extract_stats(self, article: Article) -> List[str]:
+        return self.stats.extract(article)
 
     def summarize(self, article: Article) -> str:
         """Fetch article text and return the first few sentences.
